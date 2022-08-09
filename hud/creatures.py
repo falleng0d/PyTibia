@@ -1,5 +1,6 @@
 import math
 from re import A
+import numba
 import numpy as np
 from scipy.sparse import csr_matrix
 from scipy.sparse.csgraph import dijkstra
@@ -208,7 +209,135 @@ def getCreatures(screenshot, battleListCreatures, radarCoordinate=None):
     return creatures
 
 
-def getDifferntCreaturesBySlots(previousHudCreatures, currentHudCreatures, slots):
+@numba.njit()
+def getCreatures_perf(creaturesBars, hudImg, bugHash, cyclopsHash, demonHash, dragonHash, ratHash):
+    creaturesNames = []
+    creaturesNewBars = []
+    possibleCreatures = ['Bug', 'Cyclops', 'Demon', 'Dragon', 'Rat']
+    # TODO: continue loop when some category is resolved
+    for creatureIndex in range(len(possibleCreatures)):
+        creatureName = possibleCreatures[creatureIndex]
+        monsterHash = bugHash
+        if creatureName == 'Cyclops':
+            monsterHash = cyclopsHash
+        elif creatureName == 'Demon':
+            monsterHash = demonHash
+        elif creatureName == 'Dragon':
+            monsterHash = dragonHash
+        elif creatureName == 'Rat':
+            monsterHash = ratHash
+        _, creatureNameWidth = monsterHash.shape
+        # TODO: continue loop when some category is resolved
+        for creatureBarIndex in range(len(creaturesBars)):
+            creatureBar = creaturesBars[creatureBarIndex]
+            (creatureBarStartingX, creatureBarStartingY) = creatureBar
+            creatureNameImgHalfWidth = math.floor(creatureNameWidth / 2)
+            leftDiff = max(creatureNameImgHalfWidth - 13, 0)
+            gapLeft = 0 if creatureBarStartingX > leftDiff else leftDiff - creatureBarStartingX
+            gapInnerLeft = 0 if creatureNameWidth > 27 else math.ceil(
+                (27 - creatureNameWidth) / 2)
+            rightDiff = max(creatureNameWidth -
+                            creatureNameImgHalfWidth - 14, 0)
+            gapRight = 0 if hud.core.hudSize[0] > (
+                creatureBarStartingX + 27 + rightDiff) else creatureBarStartingX + 27 + rightDiff - hud.core.hudSize[0]
+            gapInnerRight = 0 if creatureNameWidth > 27 else math.floor(
+                (27 - creatureNameWidth) / 2)
+            startingX = max(0, creatureBarStartingX - creatureNameImgHalfWidth +
+                            13 + gapLeft + gapInnerLeft - gapRight - gapInnerRight)
+            endingX = min(480, creatureBarStartingX + creatureNameImgHalfWidth +
+                          13 + gapLeft + gapInnerLeft - gapRight - gapInnerRight)
+            creatureNameImg = monsterHash.copy()
+            creatureWithDirtNameImg = hudImg[creatureBarStartingY -
+                                             13: creatureBarStartingY - 13 + 11, startingX:endingX]
+            if creatureNameImg.shape[1] != creatureWithDirtNameImg.shape[1]:
+                creatureWithDirtNameImg = hudImg[creatureBarStartingY -
+                                                 13: creatureBarStartingY - 13 + 11, startingX:endingX+1]
+            creatureWithDirtNameImg = np.ravel(creatureWithDirtNameImg)
+            creatureWithDirtNameImg = np.where(
+                creatureWithDirtNameImg == 29, 0, creatureWithDirtNameImg)
+            creatureWithDirtNameImg = np.where(
+                creatureWithDirtNameImg == 91, 0, creatureWithDirtNameImg)
+            creatureWithDirtNameImg = np.where(
+                creatureWithDirtNameImg == 113, 0, creatureWithDirtNameImg)
+            creatureWithDirtNameImg = np.where(
+                creatureWithDirtNameImg == 152, 0, creatureWithDirtNameImg)
+            creatureWithDirtNameImg = np.where(
+                creatureWithDirtNameImg == 170, 0, creatureWithDirtNameImg)
+            creatureWithDirtNameImg = np.where(
+                creatureWithDirtNameImg == 192, 0, creatureWithDirtNameImg)
+            creatureWithDirtNameImg = np.where(
+                creatureWithDirtNameImg != 0, 255, creatureWithDirtNameImg)
+            otherFlattened = creatureNameImg.flatten()
+            blackPixelsIndexes = np.nonzero(otherFlattened == 0)[0]
+            blackPixels = np.take(creatureWithDirtNameImg, blackPixelsIndexes)
+            didMatch = np.all(blackPixels == 0)
+            if didMatch:
+                creaturesNames.append(creatureName)
+                creaturesNewBars.append(creatureBar)
+                continue
+            creatureNameImg2 = monsterHash.copy()
+            creatureWithDirtNameImg2 = hudImg[creatureBarStartingY -
+                                              13: creatureBarStartingY - 13 + 11, startingX+1:endingX+1]
+            if creatureNameImg2.shape[1] != creatureWithDirtNameImg2.shape[1]:
+                creatureNameImg2 = creatureNameImg2[:,
+                                                    0:creatureNameImg2.shape[1] - 1]
+            creatureWithDirtNameImg2 = np.ravel(creatureWithDirtNameImg2)
+            creatureWithDirtNameImg2 = np.where(
+                creatureWithDirtNameImg2 == 29, 0, creatureWithDirtNameImg2)
+            creatureWithDirtNameImg2 = np.where(
+                creatureWithDirtNameImg2 == 91, 0, creatureWithDirtNameImg2)
+            creatureWithDirtNameImg2 = np.where(
+                creatureWithDirtNameImg2 == 113, 0, creatureWithDirtNameImg2)
+            creatureWithDirtNameImg2 = np.where(
+                creatureWithDirtNameImg2 == 152, 0, creatureWithDirtNameImg2)
+            creatureWithDirtNameImg2 = np.where(
+                creatureWithDirtNameImg2 == 170, 0, creatureWithDirtNameImg2)
+            creatureWithDirtNameImg2 = np.where(
+                creatureWithDirtNameImg2 == 192, 0, creatureWithDirtNameImg2)
+            creatureWithDirtNameImg2 = np.where(
+                creatureWithDirtNameImg2 != 0, 255, creatureWithDirtNameImg2)
+            otherFlattened = creatureNameImg2.flatten()
+            blackPixelsIndexes = np.nonzero(otherFlattened == 0)[0]
+            blackPixels = np.take(creatureWithDirtNameImg2, blackPixelsIndexes)
+            creatureDidMatch = np.all(blackPixels == 0)
+            if creatureDidMatch:
+                creaturesNames.append(creatureName)
+                creaturesNewBars.append(creatureBar)
+                continue
+            # creatureWithDirtNameImg3 = hudImg[creatureBarStartingY -
+            #                                   13: creatureBarStartingY - 13 + 11, startingX:endingX-1]
+            # creatureWithDirtNameImg3 = np.ravel(creatureWithDirtNameImg3)
+            # creatureWithDirtNameImg3 = np.where(
+            #     creatureWithDirtNameImg3 == 29, 0, creatureWithDirtNameImg3)
+            # creatureWithDirtNameImg3 = np.where(
+            #     creatureWithDirtNameImg3 == 91, 0, creatureWithDirtNameImg3)
+            # creatureWithDirtNameImg3 = np.where(
+            #     creatureWithDirtNameImg3 == 113, 0, creatureWithDirtNameImg3)
+            # creatureWithDirtNameImg3 = np.where(
+            #     creatureWithDirtNameImg3 == 152, 0, creatureWithDirtNameImg3)
+            # creatureWithDirtNameImg3 = np.where(
+            #     creatureWithDirtNameImg3 == 170, 0, creatureWithDirtNameImg3)
+            # creatureWithDirtNameImg3 = np.where(
+            #     creatureWithDirtNameImg3 == 192, 0, creatureWithDirtNameImg3)
+            # creatureWithDirtNameImg3 = np.where(
+            #     creatureWithDirtNameImg3 != 0, 255, creatureWithDirtNameImg3)
+            # creatureNameImg3 = monsterHash.copy()
+            # creatureNameImg3 = creatureNameImg3[:, 1:creatureNameImg3.shape[1]]
+            # if creatureWithDirtNameImg3.shape[1] != creatureNameImg3.shape[1]:
+            #     creatureNameImg3 = creatureNameImg3[:,
+            #                                         0:creatureNameImg3.shape[1] - 1]
+            # otherFlattened = creatureNameImg3.flatten()
+            # blackPixelsIndexes = np.nonzero(otherFlattened == 0)[0]
+            # blackPixels = np.take(creatureWithDirtNameImg3, blackPixelsIndexes)
+            # creatureDidMatch = np.all(blackPixels == 0)
+            # if creatureDidMatch:
+            #     creaturesNames.append(creatureName)
+            #     creaturesNewBars.append(creatureBar)
+            #     continue
+    return creaturesNames, creaturesNewBars
+
+
+def getDifferentCreaturesBySlots(previousHudCreatures, currentHudCreatures, slots):
     previousHudCreaturesBySlots = np.array(
         [], dtype=hud.creatures.creatureType)
     currentHudCreaturesBySlots = np.array(

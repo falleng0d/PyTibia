@@ -8,13 +8,19 @@ def getAdjacencyMatrix(arr):
     repArr = np.broadcast_to(repArrHorizontal, arrShape)
     seqArr = np.arange(1, arrDim + 1)
     verticesWithPossibleRightConnections = np.eye(arrDim, k=1)
-    indexesWithPossibleRightConnections = np.where(seqArr % arr.shape[1] == 0, 0, 1)
-    indexesWithPossibleRightConnections = np.broadcast_to(indexesWithPossibleRightConnections, arrShape)
-    indexesWithPossibleRightConnections = np.rot90(indexesWithPossibleRightConnections, k=-1)
-    rightConnections = np.multiply(verticesWithPossibleRightConnections, indexesWithPossibleRightConnections)
+    indexesWithPossibleRightConnections = np.where(
+        seqArr % arr.shape[1] == 0, 0, 1)
+    indexesWithPossibleRightConnections = np.broadcast_to(
+        indexesWithPossibleRightConnections, arrShape)
+    indexesWithPossibleRightConnections = np.rot90(
+        indexesWithPossibleRightConnections, k=-1)
+    rightConnections = np.multiply(
+        verticesWithPossibleRightConnections, indexesWithPossibleRightConnections)
     verticesWithPossibleLeftConnections = np.eye(arrDim, k=-1)
-    indexesWithPossibleLeftConnections = np.flip(indexesWithPossibleRightConnections)
-    leftConnections = np.multiply(verticesWithPossibleLeftConnections, indexesWithPossibleLeftConnections)
+    indexesWithPossibleLeftConnections = np.flip(
+        indexesWithPossibleRightConnections)
+    leftConnections = np.multiply(
+        verticesWithPossibleLeftConnections, indexesWithPossibleLeftConnections)
     topConnections = np.eye(arrDim, k=-arr.shape[1])
     bottomConnections = np.eye(arrDim, k=arr.shape[1])
     topBottomConnections = np.add(topConnections, bottomConnections)

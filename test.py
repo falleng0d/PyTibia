@@ -4,55 +4,51 @@ from time import sleep, time
 import actionBar.slot
 import battleList.core
 from chat import chat
+import hud.core
 import hud.creatures
-import radar.config, radar.core
-import utils.core, utils.image, utils.window
+import radar.config
+import radar.core
+import utils.core
+import utils.image
 import utils.window
-from PIL import Image, ImageOps
+import utils.window
+import dxcam
+import timeit
 
 
 def main():
-    # loop_time = time()
+    loop_time = time()
     window = utils.window.getWindow()
-    beingAttackedCreature = None
-    # corpsesToLoot = np.array([], dtype=hud.creatures.creatureType)
+    screenshot = utils.image.RGBtoGray(utils.core.getScreenshot())
+    screenshot = np.array(screenshot, dtype=np.uint8)
+    radarCoordinate = radar.core.getCoordinate(screenshot)
+    battleListCreatures = battleList.core.getCreatures(screenshot)
+    # camera = dxcam.create(output_color='GRAY')
+    hudCoordinate = hud.core.getCoordinate(screenshot)
+    hudImg = hud.core.getImgByCoordinate(screenshot, hudCoordinate)
+    creaturesBars = hud.creatures.getCreaturesBars(hudImg.flatten())
+    bugHash = utils.image.loadAsArray('hud/images/monsters/Bug.png')
+    cyclopsHash = utils.image.loadAsArray('hud/images/monsters/Cyclops.png')
+    dragonHash = utils.image.loadAsArray('hud/images/monsters/Dragon.png')
+    demonHash = utils.image.loadAsArray('hud/images/monsters/Demon.png')
+    ratHash = utils.image.loadAsArray('hud/images/monsters/Dragon.png')
     while True:
-        screenshot = utils.image.RGBtoGray(utils.core.getScreenshot())
-        slotCount = actionBar.slot.getSlotCount(screenshot)
-        print(slotCount)
-        # for digit in np.arange(10):
-        # digit = 4
-        # number = Image.open('actionBar/images/slotDigits/{}.png'.format(digit))
-        # number = ImageOps.grayscale(number)
-        # newNumber = np.array(number.copy(), dtype=np.uint8)
-        # newNumber = np.where(newNumber == 0, 0, 255)
-        # newNumber = np.array(newNumber, dtype=np.uint8)
-        # utils.image.save(newNumber, 'actionBar/images/slotDigits/{}.png'.format(digit))
-        # utils.image.save(screenshot, 'screenshot.png')
-        # radarCoordinate = radar.core.getCoordinate(screenshot)
-        # battleListCreatures = battleList.core.getCreatures(screenshot)
-        # hudCreatures = hud.creatures.getCreatures(screenshot, battleListCreatures, radarCoordinate=radarCoordinate)
-        # if battleList.core.isAttackingSomeCreature(battleListCreatures):
-        #     (pixelCoordinateX, pixelCoordinateY) = utils.core.getPixelFromCoordinate(radarCoordinate)
-        #     walkableFloorsSqms = radar.config.walkableFloorsSqms.copy()[radarCoordinate[2], pixelCoordinateY-5:pixelCoordinateY+6, pixelCoordinateX-7:pixelCoordinateX+8]
-        #     beingAttackedCreature =  hudCreatures[hudCreatures['isBeingAttacked'] == True][0]
-        #     hasTargetToCreatureByIndex = hud.creatures.hasTargetToCreatureByIndex(walkableFloorsSqms, hudCreatures['slot'], beingAttackedCreature['slot'])
-        #     print('hasTargetToCreatureByIndex', hasTargetToCreatureByIndex)
+        # frame = camera.grab()
+        # print(creaturesBars)
+        # start_time = time()
+        # creaturesBars = hud.creatures.getCreaturesBars(hudImg)
+        hud.creatures.getCreatures_perf(
+            creaturesBars, hudImg, bugHash, cyclopsHash, demonHash, dragonHash, ratHash)
+        # hudCreatures = hud.creatures.getCreatures(
+        #     screenshot, battleListCreatures, radarCoordinate=radarCoordinate)
+        # print(res)
         # break
-        # beingAttackedIndexes = np.where(hudCreatures['isBeingAttacked'] == True)[0]
-        # hasCreatureBeingAttacked = len(beingAttackedIndexes) > 0
-        # if chat.hasNewLoot(screenshot) and beingAttackedCreature:
-        #     corpsesToLoot = np.append(corpsesToLoot, [beingAttackedCreature], axis=0)
-        # if hasCreatureBeingAttacked:
-        #     beingAttackedCreature = hudCreatures[beingAttackedIndexes[0]]
-        # else:
-        #     beingAttackedCreature = None
-        # timef = (time() - loop_time)
-        # timef = timef if timef else 1
-        # fps = 1 / timef
-        # # print('FPS {}'.format(fps))
-        # print('corpsesToLoot', corpsesToLoot)
-        # loop_time = time()
+        timef = (time() - loop_time)
+        timef = timef if timef else 1
+        fps = 1 / timef
+        print('FPS {}'.format(fps))
+        loop_time = time()
+        # print("%s" % (time() - start_time))
 
 
 if __name__ == '__main__':
