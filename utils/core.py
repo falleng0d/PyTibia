@@ -9,6 +9,8 @@ import dxcam
 
 
 camera = dxcam.create()
+manualPressCurrentKeyDown = None
+pyautogui.PAUSE = 0
 
 
 def cacheObjectPos(func):
@@ -125,3 +127,27 @@ def randomCoord(x, y, width, height):
     x = random.randrange(x, x + width)
     y = random.randrange(y, y + height)
     return (x, y)
+
+
+def manualPress(key, keyDown):
+    global manualPressCurrentKeyDown
+
+    print('---Entrando manual press')
+
+    if manualPressCurrentKeyDown == key and keyDown is True:
+        return
+
+    if keyDown:
+        #sleep(20/1000)
+        if manualPressCurrentKeyDown is not None:
+            print('soltando a tecla ' + manualPressCurrentKeyDown)
+            pyautogui.keyUp(manualPressCurrentKeyDown)
+        print('Pressionando chave ' + key)
+        pyautogui.keyDown(key)
+        manualPressCurrentKeyDown = key
+    else:
+        print('soltando a tecla com keyDown = False ' + manualPressCurrentKeyDown)
+        pyautogui.keyUp(manualPressCurrentKeyDown)
+        manualPressCurrentKeyDown = None
+
+    print('---Saindo manual press')

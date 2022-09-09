@@ -170,9 +170,11 @@ def search(maze, cost, start, end):
             if len([visited_child for visited_child in visited_list if visited_child == child]) > 0:
                 continue
 
-            # Create the f, g, and h values
-            child.g = current_node.g + cost
-            ## Heuristic costs calculated here, this is using eucledian distance
+            if abs(current_node.position[0]-child.position[0]) != 0 and abs(current_node.position[1]-child.position[1]) != 0:
+                child.g = current_node.g + cost * 8
+            else:
+                child.g = current_node.g + cost
+            # Heuristic costs calculated here, this is using euclidian distance
             child.h = (((child.position[0] - end_node.position[0]) ** 2) +
                        ((child.position[1] - end_node.position[1]) ** 2))
 

@@ -1,21 +1,12 @@
-from os import walk
-import numpy as np
-import cv2
 from time import sleep, time
-import actionBar.slot
-import battleList.core
-from chat import chat
-import hud.creatures
-import hud.core
 import radar.config
 import radar.core
 import utils.core
 import utils.image
 import utils.window
 import utils.window
-from PIL import Image, ImageOps
-import pathlib
-import timeit
+import radar.waypoint
+import keyboard
 
 
 def main():
@@ -23,6 +14,17 @@ def main():
     # beingAttackedCreature = None
     # corpsesToLoot = np.array([], dtype=hud.creatures.creatureType)
     screenshot = utils.image.RGBtoGray(utils.core.getScreenshot())
+    (xOld, yOld, zOld) = radar.core.getCoordinate(screenshot)
+    radarCoordinate = radar.core.getCoordinate(screenshot)
+
+    while True:
+        screenshot = utils.image.RGBtoGray(utils.core.getScreenshot())
+        (x, y, z) = radar.core.getCoordinate(screenshot, previousCoordinate=(xOld, yOld, zOld))
+
+        #x1c, y1c = utils.core.getPixelFromCoordinate((x, y, z))
+        #a = radar.waypoint.speedBreakpoints(364, (x1c, y1c, z), 'a')
+        radar.waypoint.arrowKeysWalk(screenshot, (x, y, z), (32331, 31810, 7))
+
     # radarCoordinate = radar.core.getCoordinate(screenshot)
     # battleListCreatures = battleList.core.getCreatures(screenshot)
     # print(battleListCreatures)

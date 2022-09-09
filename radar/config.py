@@ -47,6 +47,7 @@ floorsLevelsImgs = np.load('radar/npys/floorsLevelsImgs.npy')
 floorsLevelsImgsHashes = {}
 nonWalkablePixelsColors = [75, 1, 102, 59, 0, 106, 92]
 walkableFloorsSqms = np.ndarray(shape=(16, 2048, 2560), dtype=np.uint)
+waypointWalkableFloorsSqms = np.ndarray(shape=(16, 2048, 2560), dtype=np.uint)
 
 for floor in floors:
     floorHash = utils.core.hashit(floorsLevelsImgs[floor])
@@ -55,6 +56,14 @@ for floor in floors:
         np.isin(floorsImgs[floor], nonWalkablePixelsColors), 0, 1
     )
     walkableFloorsSqms[floor] = walkableFloorSqms
+
+for floor in floors:
+    floorHash = utils.core.hashit(floorsLevelsImgs[floor])
+    floorsLevelsImgsHashes[floorHash] = floor
+    waypointWalkableFloorSqms = np.where(
+        np.isin(floorsImgs[floor], nonWalkablePixelsColors), 1, 0
+    )
+    waypointWalkableFloorsSqms[floor] = waypointWalkableFloorSqms
 
 # radarImagesCoordinates = np.load('radar/npys/radarImagesCoordinates.npy', allow_pickle=True)
 
