@@ -39,7 +39,7 @@ def main():
     nonGrayScreenshot = utils.core.getScreenshot()
     screenshot = utils.image.RGBtoGray(nonGrayScreenshot)
     # backpackSlotImg = getBackpackSlotImg(screenshot, 'fur backpack', 1)
-    # utils.image.save(backpackSlotImg, 'backpackSlotImg.png')
+    utils.image.save(screenshot, 'screenshot.png')
     hudSize = (960, 704)
     resolution = 1080
     # battleListCreatures = battleList.core.getCreatures(screenshot)

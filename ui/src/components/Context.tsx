@@ -11,7 +11,7 @@ export const ContextProvider = ({ children }: any) => {
         const res = await window.api.getContext();
         setContext(res);
       } catch (err) {
-        console.log(`🚀 ~ err`, err);
+        console.log(`🚀 ~ error fetching context`, err);
       }
     }
     initContext();

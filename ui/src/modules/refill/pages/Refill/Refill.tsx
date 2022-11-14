@@ -14,6 +14,7 @@ import { HealthPotions } from '../../../../types/health.types';
 
 export const Refill = () => {
   const { context, setContext } = useContext(Context);
+  console.log(`🚀 ~ context`, context);
   const handleHealthPotionChange = async (
     event: SelectChangeEvent<unknown>,
     _: ReactNode
@@ -51,7 +52,7 @@ export const Refill = () => {
           <TextField
             label='Quantity'
             inputProps={{ type: 'number' }}
-            value={context.refill.health.quantity}
+            value={context.refill?.health?.quantity}
             // onChange={(evt) =>
             //   setQuantityOfHealthPotionsToRefill(+evt.target.value)
             // }

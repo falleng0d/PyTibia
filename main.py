@@ -24,6 +24,7 @@ import utils.core
 import utils.image
 import eventlet
 import socketio
+import pygetwindow
 
 pyautogui.FAILSAFE = False
 pyautogui.PAUSE = 0
@@ -38,10 +39,29 @@ gameContext = {
     'battleListCreatures': np.array([], dtype=battleList.typing.creatureType),
     'beingAttackedCreature': None,
     'cavebot': {
-        'running': False,
+        'running': True,
         'waypoints': {
             'currentIndex': None,
             'points': np.array([
+                # mino dar
+                # ('walk', (33215, 32456, 8), 0, {}),
+                # ('moveUpNorth', (33215, 32456, 8), 0, {}),
+                # ('walk', (33215, 32412, 7), 0, {}),
+                # ('walk', (33235, 32381, 7), 0, {}),
+                # ('walk', (33277, 32345, 7), 0, {}),
+                # ('walk', (33289, 32309, 7), 0, {}),
+                # ('walk', (33300, 32294, 7), 0, {}),
+                # ('walk', (33307, 32278, 7), 0, {}),
+                # ('walk', (33320, 32282, 7), 0, {}),
+                # ('walk', (33308, 32289, 7), 0, {}),
+                # ('refillChecker', (33308, 32289, 7), 0, {
+                #     'minimumOfManaPotions': 1,
+                #     'minimumOfHealthPotions': 1,
+                #     'minimumOfCapacity': 200,
+                #     'successIndex': 5,
+                # }),
+                
+                # lava ank
                 # ('walk', (33127, 32830, 7), 0, {}),
                 # ('walk', (33126, 32834, 7), 0, {}),
                 # ('depositItems', (33126, 32841, 7), 0, {}),
@@ -104,7 +124,7 @@ gameContext = {
     },
     'hud': {
         'coordinate': None,
-        'img': None, 
+        'img': None,
     },
     'lastCoordinateVisited': None,
     'lastPressedKey': None,
@@ -127,6 +147,7 @@ gameContext = {
     'targetCreature': None,
     'screenshot': None,
     'way': None,
+    'window': None
 }
 hudCreatures = np.array([], dtype=hud.creatures.creatureType)
 taskExecutor = TaskExecutor()
@@ -136,21 +157,33 @@ def main():
     sio = socketio.Server()
     app = socketio.WSGIApp(sio)
 
+    def getGameContextForSocket(context):
+        waypoints = [[[int(waypoint['coordinate'][0]), int(waypoint['coordinate'][1]), int(waypoint['coordinate'][2])], int(waypoint['tolerance']), waypoint['options']]
+                     for waypoint in context['cavebot']['waypoints']['points']]
+        return {
+            'backpacks': context['backpacks'],
+            'cavebot': {
+                'waypoints': waypoints,
+            },
+            'hotkeys': context['hotkeys'],
+            'refill': context['refill'],
+            'window': context['window'],
+        }
+
     @sio.event
     def connect(sid, environ):
         print('connect ', sid)
 
     @sio.on('getContext')
-    def handleGetContext(_):
+    def getContext(data):
         global gameContext
-        waypoints = [[[int(waypoint['coordinate'][0]), int(waypoint['coordinate'][1]), int(waypoint['coordinate'][2])], int(waypoint['tolerance']), waypoint['options']]
-                     for waypoint in gameContext['cavebot']['waypoints']['points']]
-        return None, {
-            'backpacks': gameContext['backpacks'],
-            'hotkeys': gameContext['hotkeys'],
-            'refill': gameContext['refill'],
-            'waypoints': waypoints,
-        }
+        return None, getGameContextForSocket(gameContext)
+
+    @sio.on('getWindows')
+    def getWindows(_):
+        windowsTitles = pygetwindow.getAllTitles()
+        nonEmptyWindowsTitles = [windowTitle for windowTitle in windowsTitles if windowTitle != '']
+        return None, nonEmptyWindowsTitles
 
     @sio.on('setContext')
     def handleSetContext(_, data):
@@ -158,14 +191,22 @@ def main():
         gameContext['backpacks'] = data['backpacks']
         gameContext['hotkeys'] = data['hotkeys']
         gameContext['refill'] = data['refill']
-        waypoints = [[[int(waypoint['coordinate'][0]), int(waypoint['coordinate'][1]), int(waypoint['coordinate'][2])], int(waypoint['tolerance']), waypoint['options']]
-                     for waypoint in gameContext['cavebot']['waypoints']['points']]
-        return None, {
-            'backpacks': gameContext['backpacks'],
-            'hotkeys': gameContext['hotkeys'],
-            'refill': gameContext['refill'],
-            'waypoints': waypoints,
-        }
+        gameContext['window'] = data['window']
+        return None, getGameContextForSocket(gameContext)
+
+    @sio.on('setHotkey')
+    def setHotkey(_, data):
+        global gameContext
+        gameContext['hotkeys'][data['action']] = data['hotkey']
+        return None, getGameContextForSocket(gameContext)
+
+    @sio.on('setRefillItem')
+    def setRefillItem(_, data):
+        global gameContext
+        potionType = data['type']
+        gameContext['refill'][potionType]['item'] = data['item']
+        gameContext['refill'][potionType]['quantity'] = data['quantity']
+        return None, getGameContextForSocket(gameContext)
 
     @sio.event
     def disconnect(sid):
@@ -190,6 +231,7 @@ def main():
         global gameContext
         context['coordinate'] = radar.core.getCoordinate(
             context['screenshot'], previousCoordinate=context['previousCoordinate'])
+        print(context['coordinate'])
         context['previousCoordinate'] = context['coordinate']
         gameContext = context
         return context
@@ -321,9 +363,12 @@ def main():
             copyOfContext['cavebot']['waypoints']['currentIndex'] = radar.core.getClosestWaypointIndexFromCoordinate(
                 copyOfContext['coordinate'], copyOfContext['cavebot']['waypoints']['points'])
         currentWaypointIndex = copyOfContext['cavebot']['waypoints']['currentIndex']
+        print('currentWaypointIndex', currentWaypointIndex)
         nextWaypointIndex = utils.array.getNextArrayIndex(
             copyOfContext['cavebot']['waypoints']['points'], currentWaypointIndex)
+        print('nextWaypointIndex', nextWaypointIndex)
         currentWaypoint = copyOfContext['cavebot']['waypoints']['points'][currentWaypointIndex]
+        print('currentWaypoint', currentWaypoint)
         nextWaypoint = copyOfContext['cavebot']['waypoints']['points'][nextWaypointIndex]
         waypointsStateIsEmpty = copyOfContext['cavebot']['waypoints']['state'] == None
         if waypointsStateIsEmpty:
@@ -332,6 +377,8 @@ def main():
         result = copyOfContext['coordinate'] == copyOfContext['cavebot']['waypoints']['state']['checkInCoordinate']
         didReachWaypoint = np.all(result) == True
         if copyOfContext['currentGroupTask'] == None:
+            print('no tasks, gerando')
+            print('type ->', currentWaypoint['type'])
             copyOfContext['currentGroupTask'] = gameplay.resolvers.resolveTasksByWaypointType(
                 copyOfContext, currentWaypoint)
         if copyOfContext['way'] == 'cavebot':
@@ -349,11 +396,12 @@ def main():
                         copyOfContext['lastPressedKey'] = None
                     copyOfContext['currentGroupTask'] = currentGroupTask
         if didReachWaypoint:
-            if copyOfContext['currentGroupTask'] == None or copyOfContext['currentGroupTask'].name == 'groupOfWalk':
+            if copyOfContext['currentGroupTask'] == None or copyOfContext['currentGroupTask'].name == 'groupOfWalk' or copyOfContext['currentGroupTask'].name == 'groupOfSingleWalk':
                 copyOfContext['cavebot']['waypoints']['currentIndex'] = nextWaypointIndex
                 copyOfContext['cavebot']['waypoints']['state'] = gameplay.waypoint.resolveGoalCoordinate(
                     copyOfContext['coordinate'], nextWaypoint)
         gameContext = copyOfContext
+        print(copyOfContext['currentGroupTask'])
         return copyOfContext
 
     def hasTaskToExecute(context):
@@ -374,7 +422,9 @@ def main():
 
     taskObserver.subscribe(taskObservable)
 
-    eventlet.wsgi.server(eventlet.listen(('', 5000)), app)
+    # eventlet.wsgi.server(eventlet.listen(('', 5000)), app)
+    while True:
+        time.sleep(1)
 
 
 if __name__ == '__main__':

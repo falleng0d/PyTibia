@@ -23,6 +23,15 @@ const createWindow = async () => {
     });
   });
 
+  ipcMain.handle('getWindows', async () => {
+    return new Promise((resolve, reject) => {
+      socket.emit('getWindows', (err, res) => {
+        if (err) return reject(err);
+        resolve(res);
+      });
+    });
+  });
+
   ipcMain.handle('setContext', async (_, data) => {
     return new Promise((resolve, reject) => {
       socket.emit('setContext', data, (err, res) => {
