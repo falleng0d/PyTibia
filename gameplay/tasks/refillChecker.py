@@ -26,14 +26,7 @@ class RefillCheckerTask:
         hasEnoughManaPotions = quantityOfManaPotions > self.value['options']['minimumOfManaPotions']
         capacity = getCapacity(context['screenshot'])
         hasEnoughCapacity = capacity > self.value['options']['minimumOfCapacity']
-        print('capacity', capacity)
-        print('quantityOfHealthPotions', quantityOfHealthPotions)
-        print('quantityOfManaPotions', quantityOfManaPotions)
-        print('hasEnoughCapacity', hasEnoughCapacity)
-        print('hasEnoughHealthPotions', hasEnoughHealthPotions)
-        print('hasEnoughManaPotions', hasEnoughManaPotions)
         shouldIgnore = hasEnoughHealthPotions and hasEnoughManaPotions and hasEnoughCapacity
-        print('shouldIgnore', shouldIgnore)
         return shouldIgnore
 
     def do(self, context):

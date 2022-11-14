@@ -172,7 +172,7 @@ def main():
 
     @sio.event
     def connect(sid, environ):
-        print('connect ', sid)
+        pass
 
     @sio.on('getContext')
     def getContext(data):
@@ -210,7 +210,7 @@ def main():
 
     @sio.event
     def disconnect(sid):
-        print('disconnect ', sid)
+        pass
 
     # optimal_thread_count = multiprocessing.cpu_count()
     # threadPoolScheduler = ThreadPoolScheduler(optimal_thread_count)
@@ -231,7 +231,6 @@ def main():
         global gameContext
         context['coordinate'] = radar.core.getCoordinate(
             context['screenshot'], previousCoordinate=context['previousCoordinate'])
-        print(context['coordinate'])
         context['previousCoordinate'] = context['coordinate']
         gameContext = context
         return context
@@ -363,12 +362,9 @@ def main():
             copyOfContext['cavebot']['waypoints']['currentIndex'] = radar.core.getClosestWaypointIndexFromCoordinate(
                 copyOfContext['coordinate'], copyOfContext['cavebot']['waypoints']['points'])
         currentWaypointIndex = copyOfContext['cavebot']['waypoints']['currentIndex']
-        print('currentWaypointIndex', currentWaypointIndex)
         nextWaypointIndex = utils.array.getNextArrayIndex(
             copyOfContext['cavebot']['waypoints']['points'], currentWaypointIndex)
-        print('nextWaypointIndex', nextWaypointIndex)
         currentWaypoint = copyOfContext['cavebot']['waypoints']['points'][currentWaypointIndex]
-        print('currentWaypoint', currentWaypoint)
         nextWaypoint = copyOfContext['cavebot']['waypoints']['points'][nextWaypointIndex]
         waypointsStateIsEmpty = copyOfContext['cavebot']['waypoints']['state'] == None
         if waypointsStateIsEmpty:
@@ -377,8 +373,6 @@ def main():
         result = copyOfContext['coordinate'] == copyOfContext['cavebot']['waypoints']['state']['checkInCoordinate']
         didReachWaypoint = np.all(result) == True
         if copyOfContext['currentGroupTask'] == None:
-            print('no tasks, gerando')
-            print('type ->', currentWaypoint['type'])
             copyOfContext['currentGroupTask'] = gameplay.resolvers.resolveTasksByWaypointType(
                 copyOfContext, currentWaypoint)
         if copyOfContext['way'] == 'cavebot':
@@ -396,12 +390,12 @@ def main():
                         copyOfContext['lastPressedKey'] = None
                     copyOfContext['currentGroupTask'] = currentGroupTask
         if didReachWaypoint:
-            if copyOfContext['currentGroupTask'] == None or copyOfContext['currentGroupTask'].name == 'groupOfWalk' or copyOfContext['currentGroupTask'].name == 'groupOfSingleWalk':
+            changeableWaypointTasksTypes = ['groupOfSingleWalk', 'groupOfUseShovel', 'groupOfWalk']
+            if copyOfContext['currentGroupTask'] == None or copyOfContext['currentGroupTask'].name in changeableWaypointTasksTypes:
                 copyOfContext['cavebot']['waypoints']['currentIndex'] = nextWaypointIndex
                 copyOfContext['cavebot']['waypoints']['state'] = gameplay.waypoint.resolveGoalCoordinate(
                     copyOfContext['coordinate'], nextWaypoint)
         gameContext = copyOfContext
-        print(copyOfContext['currentGroupTask'])
         return copyOfContext
 
     def hasTaskToExecute(context):
